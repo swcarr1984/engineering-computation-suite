@@ -1,65 +1,134 @@
+"""
+===========================================================
+Transient Cooling of Stainless Steel Bar (Semi-Infinite Solid)
+Author: S. Carr
+Date: 2024-06-12
+Description:
+    Computes the time required for a stainless steel AISI304 bar
+    to cool from an initial temperature to a target temperature
+    at both the centre and a specified depth using semi-infinite
+    solid transient conduction theory.
 
-# S.Carr - Python (Jupyter) Thermodynamics program
-# A stainless steel (AISI304) long rectangular bar 100×100mm is initially at 95 ◦C. The bar
-# is submerged in water at constant temperature of 17 ◦C. Determine the time it takes for the
-# bar centre temperature and at a distance in Z axis of 40mm from the bottom edge to reach 50
-# ◦C. Assume the convection coefficient of 50W/m2.K. Solve as a semi-infinite bar.
+    Includes:
+        - Material properties
+        - Semi-infinite analytical solution
+        - Iterative convergence on theta
+        - Plotly visualisation of theta vs time
+===========================================================
+"""
 
 import math
+import plotly.graph_objects as go
 
-# List variables
+# -----------------------------------------------------------
+# Input Parameters
+# -----------------------------------------------------------
+Ti = 95            # Initial temperature (°C)
+To = 50            # Target temperature (°C)
+Tinf = 17          # Fluid temperature (°C)
+Lc = 0.05          # Characteristic length (m)
+h = 50             # Convection coefficient (W/m²·K)
+rho = 7900         # Density (kg/m³)
+Cp = 494.29        # Specific heat (J/kg·K)
+k = 15.675         # Thermal conductivity (W/m·K)
+Lambda = 0.3835    # 1-term eigenvalue
+Alpha = 1.025      # 1-term coefficient
+x = 0.04           # Depth from surface (m)
 
-Ti = 95           # Initial temp
-To = 50           # Final temp
-Tinf = 17         # Fluid temp
-Lc = 0.05         # Lc (m) = half of L and W = 0.5 x 100mm
-h = 50            # convection coeff
-p = 7900          # density
-Cp = 494.29       # spec heat
-k = 15.675        # therm cond
-Lambda = 0.3835   # 1D equation lambda
-Alpha = 1.025     # 1D equation alpha  
-t = 0.1           # initial time
-x = 0.04          # z distance
+# -----------------------------------------------------------
+# Derived Properties
+# -----------------------------------------------------------
+a = k / (rho * Cp)                     # Thermal diffusivity
+Bi = (h * Lc) / k                      # Biot number
+theta_target = (To - Tinf) / (Ti - Tinf)
 
-# Equations
+# -----------------------------------------------------------
+# Iterative Solver
+# -----------------------------------------------------------
+t = 0.1
+theta_values = []
+time_values = []
 
-a = k/(p*Cp)                          # material alpha
-Bi = (h*Lc)/k                         # Biot number
-thetaFinal = ((To-Tinf)/(Ti-Tinf)) 
+while True:
+    t += 0.5
 
-flag = 1
+    tau = (a * t) / (Lc ** 2)
+    theta_wall = Alpha * math.exp(-(Lambda ** 2) * tau)
 
-while(flag == 1):
-    
-    t = t+0.5
-    
-    # time dependent equations
-    tau = (a*t)/(Lc**2)
-    thetaWall = (Alpha)*math.exp(-((Lambda)**2)*(tau)) 
-    
-    # Semi Inf solid analytical equations
-    n = x/(2 *math.sqrt(a*t))
-    eq1 = (h*math.sqrt(a*t))/k
-    eq2 = (h*x)/k
-    eq3 = (h**2*a*t)/(k**2)
-    thetaSemiInf = 1 - math.erfc(n)+((math.exp(eq2+eq3))*(math.erfc(n+eq1)))
-    thetaResult = ((thetaWall**2)*(thetaSemiInf))
-    if math.isclose(thetaResult, thetaFinal, abs_tol = 0.00005) == True:
-        time = t
-        flag = 0
-        print('Final calculated theta is:',round((thetaResult),6),'Target theta is:',round((thetaFinal),6))
-        error = abs(abs(thetaResult)-abs(thetaFinal))
-        print('Error term is:',error)
+    # Semi-infinite solid solution
+    n = x / (2 * math.sqrt(a * t))
+    eq1 = (h * math.sqrt(a * t)) / k
+    eq2 = (h * x) / k
+    eq3 = (h ** 2 * a * t) / (k ** 2)
 
-        
+    theta_semi = 1 - math.erfc(n) + math.exp(eq2 + eq3) * math.erfc(n + eq1)
+    theta_result = (theta_wall ** 2) * theta_semi
+
+    theta_values.append(theta_result)
+    time_values.append(t)
+
+    if math.isclose(theta_result, theta_target, abs_tol=5e-5):
+        final_time = t
+        break
+
     if t > 500000:
-        flag = 0
-        print('overflow, error')
-        
-print('Tau is:',round(tau,5))
-print('Final Theta is:',round(thetaFinal,8))    
-print('Final time is',time,'seconds')
-print('Using a one-term approximation for the two plane wall equations')
-print('The answer is:',round(time/60,2),'minutes')
-print('This means that the error is < 2% as tau is greater than 0.2')
+        print("Overflow — no convergence.")
+        break
+
+# -----------------------------------------------------------
+# Output Results
+# -----------------------------------------------------------
+print(f"Final theta: {theta_result:.6f} (target: {theta_target:.6f})")
+print(f"Final time: {final_time:.2f} seconds")
+print(f"Final time: {final_time/60:.2f} minutes")
+print("Using a one-term approximation for the plane wall solution.")
+print("Error < 2% because tau > 0.2")
+
+# -----------------------------------------------------------
+# Plotly Visualisation
+# -----------------------------------------------------------
+fig = go.Figure()
+
+fig.add_trace(go.Scatter(
+    x=time_values,
+    y=theta_values,
+    mode="lines",
+    line=dict(color="royalblue", width=3),
+    name="Theta(t)"
+))
+
+# Target theta line using a shape
+fig.add_shape(
+    type="line",
+    x0=min(time_values),
+    x1=max(time_values),
+    y0=theta_target,
+    y1=theta_target,
+    line=dict(color="red", dash="dash"),
+)
+
+fig.update_layout(
+    title="Transient Cooling of Stainless Steel Bar (Theta vs Time)",
+    xaxis_title="Time (s)",
+    yaxis_title="Theta",
+    template="plotly_dark",
+    font=dict(size=14),
+    annotations=[
+        dict(
+            x=max(time_values),
+            y=theta_target,
+            xanchor="right",
+            yanchor="bottom",
+            text="Target Theta",
+            showarrow=False,
+            font=dict(color="red")
+        )
+    ]
+)
+
+# If VS Code/Jupyter errors, force a renderer:
+# import plotly.io as pio
+# pio.renderers.default = "notebook"  # or "vscode", "browser"
+
+fig.show()
+
