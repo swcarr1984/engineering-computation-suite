@@ -1,63 +1,114 @@
-# S.Carr - Heat exchanger analysis with bar plot
-# This script compares both methods for a cross‑flow exchanger 
-# with one fluid mixed and the other unmixed
+"""
+===========================================================
+Cross‑Flow Heat Exchanger Analysis (Mixed–Unmixed)
+Author: S. Carr
+Date: 2024‑12‑08
+Description:
+    Compares LMTD and NTU methods for a cross‑flow heat exchanger
+    with one fluid mixed and the other unmixed. Includes a Plotly
+    bar chart showing outlet temperatures for baseline and doubled
+    flow rates.
+===========================================================
+"""
 
-from matplotlib import pyplot as plt
-import numpy as np
 import math
-%matplotlib inline
+import plotly.graph_objects as go
 
-print('******** Question 2 ******** ')
-U = 150
-cin = 25
-cout = 210
-hin = 425
-cCp = 1007
-hCp = 1101.25
-mh1 = 10   # hot flow rate initially
-mh2 = 20   # hot flow when doubled
-mc1 = 10
-mc2 = 20
-Cc = mc1*cCp
-Ch = mh1*hCp
-print('Cc=',Cc,'Ch=',Ch)
+# -----------------------------------------------------------
+# Input Parameters
+# -----------------------------------------------------------
+U = 150            # Overall heat transfer coefficient (W/m²·K)
+cin = 25           # Cold inlet temperature (°C)
+cout = 210         # Cold outlet temperature (°C)
+hin = 425          # Hot inlet temperature (°C)
+cCp = 1007         # Cold fluid specific heat (J/kg·K)
+hCp = 1101.25      # Hot fluid specific heat (J/kg·K)
+
+mh1 = 10           # Hot flow rate (kg/s)
+mh2 = 20           # Hot flow rate doubled (kg/s)
+mc1 = 10           # Cold flow rate (kg/s)
+mc2 = 20           # Cold flow rate doubled (kg/s)
+
+# -----------------------------------------------------------
+# Capacity Rates
+# -----------------------------------------------------------
+Cc = mc1 * cCp
+Ch = mh1 * hCp
 Cmin = Cc
 Cmax = Ch
-Q = Cc*(cout-cin)
-print('Q=',Q)
-hout = hin-(Q/Ch)
-print('Th out temp =',hout)
-dt1 = hin-cout
-dt2 = hout-cin
-tlm = (dt1-dt2)/(math.log(dt1/dt2))
-print('Delta Tlm is:',tlm)
-F = 0.88 # correction factor from Cengel fig 11.19
-LMTD_As = Q/(U*F*tlm)
-print('The LMTD method area is:',LMTD_As)
-c = Cmin/Cmax
-Qmax = Cmin*(hin-cin)
-e = Q/Qmax
-print('c=',c,'e=',e)
-NTU = (-math.log(c*math.log(1-e)+1))/c
-print('NTU=',NTU)
-NTU_As = (NTU*Cmin)/U
-print('The NTU method area is:',NTU_As)
 
-Ch2 = mh2*hCp
-Cc2 = mc2*cCp
-hout2 = hin-(Q/Ch2)
-cout2 = cin+(Q/Cc2)
+Q = Cc * (cout - cin)
+hout = hin - (Q / Ch)
 
-print(cout,hout,cout2,hout2)
+# -----------------------------------------------------------
+# LMTD Method
+# -----------------------------------------------------------
+dt1 = hin - cout
+dt2 = hout - cin
+tlm = (dt1 - dt2) / math.log(dt1 / dt2)
 
-heights = [cout,cout2,hout,hout2]
-x_pos = [1,2,3,4]
-plt.bar(x_pos,heights)
-plt.title("Outlet temperatures of heat exhanger with flow doubling")
-plt.xlabel('Outlets')
-plt.ylabel('Outlet Temperature (deg C)')
-outlets = ['Cout @ 10kg/s','Cout @ 20kg/s','Hout @ 10kg/s','Hout @ 20kg/s']
-plt.xticks([1,2,3,4], outlets)
-plt.grid(axis='y')
-plt.show()
-print('Doubling the flowrate of the fluid halves the inlet/outlet temperature delta of the given stream ')
+F = 0.88  # Correction factor (Cengel Fig. 11.19)
+LMTD_area = Q / (U * F * tlm)
+
+# -----------------------------------------------------------
+# NTU Method
+# -----------------------------------------------------------
+c = Cmin / Cmax
+Qmax = Cmin * (hin - cin)
+effectiveness = Q / Qmax
+
+NTU = -math.log(c * math.log(1 - effectiveness) + 1) / c
+NTU_area = (NTU * Cmin) / U
+
+# -----------------------------------------------------------
+# Flow‑Doubling Case
+# -----------------------------------------------------------
+Ch2 = mh2 * hCp
+Cc2 = mc2 * cCp
+
+hout2 = hin - (Q / Ch2)
+cout2 = cin + (Q / Cc2)
+
+# -----------------------------------------------------------
+# Output Summary
+# -----------------------------------------------------------
+print(f"Cc = {Cc:.2f}, Ch = {Ch:.2f}")
+print(f"Heat Transfer Q = {Q:.2f} W")
+print(f"Hot Outlet Temperature = {hout:.2f} °C")
+print(f"LMTD Area = {LMTD_area:.3f} m²")
+print(f"NTU Area = {NTU_area:.3f} m²")
+print(f"Effectiveness = {effectiveness:.4f}")
+print(f"NTU = {NTU:.4f}")
+print(f"Flow‑doubling outlets: Cout2 = {cout2:.2f}, Hout2 = {hout2:.2f}")
+
+# -----------------------------------------------------------
+# Plotly Visualisation
+# -----------------------------------------------------------
+outlet_labels = [
+    "Cold Out @ 10 kg/s",
+    "Cold Out @ 20 kg/s",
+    "Hot Out @ 10 kg/s",
+    "Hot Out @ 20 kg/s"
+]
+
+outlet_values = [cout, cout2, hout, hout2]
+
+fig = go.Figure()
+
+fig.add_trace(go.Bar(
+    x=outlet_labels,
+    y=outlet_values,
+    marker_color=["royalblue", "lightblue", "firebrick", "indianred"]
+))
+
+fig.update_layout(
+    title="Outlet Temperatures for Baseline and Doubled Flow Rates",
+    xaxis_title="Outlet Stream",
+    yaxis_title="Temperature (°C)",
+    template="plotly_dark",
+    font=dict(size=14)
+)
+
+fig.show()
+
+print("Doubling the flow rate reduces the temperature change across each stream.")

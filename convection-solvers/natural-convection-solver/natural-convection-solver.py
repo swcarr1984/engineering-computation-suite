@@ -2,7 +2,7 @@
 ===========================================================
 Heat Balance Equation - Natural Convection Calculator
 Author: S. Carr
-Date: 2026-07-09
+Date: 2024-07-27
 Description:
     This script calculates heat transfer by natural convection
     using standard thermophysical correlations. It includes

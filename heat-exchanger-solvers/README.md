@@ -1,5 +1,6 @@
 
 Heat‑Exchanger Performance Analysis (Python / Thermofluids / LMTD & NTU Methods)
+![alt text](image.png)
 This project implements a cross‑flow heat‑exchanger analysis using both the Log Mean Temperature Difference (LMTD) and Number of Transfer Units (NTU) methods.
 It calculates outlet temperatures, effectiveness, and required heat‑transfer area, then visualizes how doubling the flow rate affects thermal performance.
 
