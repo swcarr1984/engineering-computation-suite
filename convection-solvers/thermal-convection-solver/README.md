@@ -1,5 +1,7 @@
 
 Transient Cooling of a Stainless‑Steel Bar (Semi‑Infinite Solid Model)
+
+![alt text](image.png)
 This script implements a transient heat‑conduction model for a stainless‑steel (AISI 304) rectangular bar submerged in water. The goal is to determine the time required for:
 
 The centre temperature, and a point 40 mm from the bottom surface

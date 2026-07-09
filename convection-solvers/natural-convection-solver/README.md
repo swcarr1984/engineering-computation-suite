@@ -1,5 +1,6 @@
 
 Natural Convection Heat‑Transfer Calculator (Python / NumPy / Engineering Analysis)
+![alt text](image.png)
 This project implements a natural convection heat‑transfer calculation for a vertical plate using the Churchill–Chu correlation. It demonstrates how engineering physics can be automated using Python, NumPy, and reproducible scientific‑computing practices.
 
 The script computes:
